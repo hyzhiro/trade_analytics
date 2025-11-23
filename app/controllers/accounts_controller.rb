@@ -117,5 +117,22 @@ class AccountsController < ApplicationController
         wins: stats[:wins]
       }
     end
+
+    # 通貨ペアごとの勝率
+    item_stats = {}
+    all_trades_for_graph.where.not(item: [nil, ""]).find_each do |t|
+      item = t.item
+      item_stats[item] ||= { total: 0, wins: 0 }
+      item_stats[item][:total] += 1
+      item_stats[item][:wins] += 1 if t.profit.to_f > 0
+    end
+    @item_win_rates = item_stats.map do |item, stats|
+      {
+        item: item,
+        win_rate: stats[:total] > 0 ? (stats[:wins].to_f / stats[:total] * 100).round(1) : 0,
+        total: stats[:total],
+        wins: stats[:wins]
+      }
+    end.sort_by { |h| -h[:win_rate] } # 勝率の高い順にソート
   end
 end

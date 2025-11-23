@@ -210,6 +210,68 @@
       </script>
     </div>
   </div>
+
+  <div>
+    <h2>通貨ペアごとの勝率</h2>
+    <div style="margin: 0 0 12px;">
+      <canvas id="itemChart" height="200"></canvas>
+      <script>
+        (function() {
+          var ctx = document.getElementById('itemChart').getContext('2d');
+          var data = <%= raw(@item_win_rates.map { |h| h[:win_rate] }.to_json) %>;
+          var labels = <%= raw(@item_win_rates.map { |h| h[:item] }.to_json) %>;
+          var totals = <%= raw(@item_win_rates.map { |h| h[:total] }.to_json) %>;
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: '勝率 (%)',
+                data: data,
+                backgroundColor: 'rgba(159,168,218,0.6)',
+                borderColor: '#7986cb',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              animation: false,
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  title: {
+                    display: true,
+                    text: '勝率 (%)'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: '通貨ペア'
+                  },
+                  ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                  }
+                }
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(context) {
+                      var index = context.dataIndex;
+                      return '総数: ' + totals[index] + '件';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        })();
+      </script>
+    </div>
+  </div>
 </div>
 
 <h2>トレード一覧</h2>
