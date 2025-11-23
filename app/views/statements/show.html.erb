@@ -1,0 +1,53 @@
+<h1>Statement</h1>
+<p>Account: <%= @statement.account.number %> (<%= @statement.account.name %>)</p>
+<p>Closed P/L: <%= number_with_delimiter(@statement.closed_pl) %></p>
+<p>Balance: <%= number_with_delimiter(@statement.balance) %></p>
+<p>レポート生成: <%= @statement.raw_generated_at ? l(@statement.raw_generated_at) : "-" %></p>
+<p>
+  原本:
+  <% if @statement.file.attached? %>
+    <%= link_to "ダウンロード", rails_blob_path(@statement.file, disposition: "attachment") %>
+  <% end %>
+</p>
+
+<h2>Closed Transactions</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Ticket</th>
+      <th>Open Time</th>
+      <th>Type</th>
+      <th>Size</th>
+      <th>Item</th>
+      <th>Price</th>
+      <th>S / L</th>
+      <th>T / P</th>
+      <th>Close Time</th>
+      <th>Price</th>
+      <th>Commission</th>
+      <th>Taxes</th>
+      <th>Swap</th>
+      <th>Profit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @statement.trades.each do |t| %>
+      <tr>
+        <td><%= t.ticket %></td>
+        <td><%= format_mt4_time(t.open_time) %></td>
+        <td><%= t.trade_type %></td>
+        <td><%= t.size %></td>
+        <td><%= t.item %></td>
+        <td><%= t.open_price %></td>
+        <td><%= t.sl %></td>
+        <td><%= t.tp %></td>
+        <td><%= format_mt4_time(t.close_time) %></td>
+        <td><%= t.close_price %></td>
+        <td><%= number_with_delimiter(t.commission) %></td>
+        <td><%= number_with_delimiter(t.taxes) %></td>
+        <td><%= number_with_delimiter(t.swap) %></td>
+        <td><%= number_with_delimiter(t.profit) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

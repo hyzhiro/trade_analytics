@@ -1,0 +1,347 @@
+<h1><%= @account.name %>（<%= @account.number %>）</h1>
+<p>通貨: <%= @account.currency %></p>
+
+<h2>損益グラフ</h2>
+<div style="margin: 0 0 12px;">
+  <canvas id="equityChart" height="120"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    (function() {
+      var ctx = document.getElementById('equityChart').getContext('2d');
+      // 取引回数(インデックス)を横軸
+      var data = <%= raw(@equity_points.map { |(x, y)| { x: x, y: y } }.to_json) %>;
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [{
+            label: '累積損益',
+            data: data,
+            borderColor: '#4fc3f7',
+            backgroundColor: 'rgba(79,195,247,0.2)',
+            tension: 0.2,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          animation: false,
+          responsive: true,
+          scales: {
+            x: {
+              type: 'linear',
+              title: { display: true, text: '取引回数' },
+              ticks: { precision: 0 }
+            },
+            y: {
+              title: { display: true, text: 'P/L' }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    })();
+  </script>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
+  <div>
+    <h2>Type別の割合</h2>
+    <div style="margin: 0 0 12px;">
+      <canvas id="typeChart" height="200"></canvas>
+      <script>
+        (function() {
+          var ctx = document.getElementById('typeChart').getContext('2d');
+          var data = <%= raw(@type_distribution.map { |h| h[:count] }.to_json) %>;
+          var labels = <%= raw(@type_distribution.map { |h| h[:type] }.to_json) %>;
+          var colors = ['#81d4fa', '#80deea', '#90caf9', '#a5d6a7', '#ce93d8', '#ffcc80'];
+          new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 1
+              }]
+            },
+            options: {
+              animation: false,
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      var label = context.label || '';
+                      var value = context.parsed || 0;
+                      var total = context.dataset.data.reduce((a, b) => a + b, 0);
+                      var percentage = ((value / total) * 100).toFixed(1);
+                      return label + ': ' + value + '件 (' + percentage + '%)';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        })();
+      </script>
+    </div>
+  </div>
+
+  <div>
+    <h2>曜日ごとの勝率</h2>
+    <div style="margin: 0 0 12px;">
+      <canvas id="weekdayChart" height="200"></canvas>
+      <script>
+        (function() {
+          var ctx = document.getElementById('weekdayChart').getContext('2d');
+          var data = <%= raw(@weekday_win_rates.map { |h| h[:win_rate] }.to_json) %>;
+          var labels = <%= raw(@weekday_win_rates.map { |h| h[:day] + '曜日' }.to_json) %>;
+          var totals = <%= raw(@weekday_win_rates.map { |h| h[:total] }.to_json) %>;
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: '勝率 (%)',
+                data: data,
+                backgroundColor: 'rgba(129,212,250,0.6)',
+                borderColor: '#4fc3f7',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              animation: false,
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  title: {
+                    display: true,
+                    text: '勝率 (%)'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: '曜日'
+                  }
+                }
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(context) {
+                      var index = context.dataIndex;
+                      return '総数: ' + totals[index] + '件';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        })();
+      </script>
+    </div>
+  </div>
+
+  <div>
+    <h2>時間帯ごとの勝率</h2>
+    <div style="margin: 0 0 12px;">
+      <canvas id="hourChart" height="200"></canvas>
+      <script>
+        (function() {
+          var ctx = document.getElementById('hourChart').getContext('2d');
+          var data = <%= raw(@hour_win_rates.map { |h| h[:win_rate] }.to_json) %>;
+          var labels = <%= raw(@hour_win_rates.map { |h| h[:hour_label] }.to_json) %>;
+          var totals = <%= raw(@hour_win_rates.map { |h| h[:total] }.to_json) %>;
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: '勝率 (%)',
+                data: data,
+                backgroundColor: 'rgba(128,222,234,0.6)',
+                borderColor: '#4dd0e1',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              animation: false,
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  title: {
+                    display: true,
+                    text: '勝率 (%)'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: '時間帯'
+                  },
+                  ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                  }
+                }
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    afterLabel: function(context) {
+                      var index = context.dataIndex;
+                      return '総数: ' + totals[index] + '件';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        })();
+      </script>
+    </div>
+  </div>
+</div>
+
+<h2>トレード一覧</h2>
+<div class="filter-form" style="margin: 0 0 20px; padding: 16px; background-color: #f5fafb; border-radius: 12px; border: 2px solid #b3e5fc;">
+  <%= form_with url: account_path(@account), method: :get, local: true do |f| %>
+    <%= hidden_field_tag :per_page, params[:per_page] if params[:per_page].present? %>
+    <%= hidden_field_tag :page, params[:page] if params[:page].present? %>
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <span style="color: #0277bd; font-weight: 500;">期間:</span>
+      <%= f.date_field :from, value: params[:from], placeholder: "From", style: "margin-right: 4px;" %>
+      <span style="color: #81d4fa;">〜</span>
+      <%= f.date_field :to, value: params[:to], placeholder: "To", style: "margin-left: 4px;" %>
+      <span style="margin-left:12px; color: #0277bd; font-weight: 500;">Type:</span>
+      <%= f.select :type, options_for_select([["(すべて)",""]] + @trade_types.map { |v| [v, v] }, selected: params[:type]) %>
+      <span style="margin-left:12px; color: #0277bd; font-weight: 500;">銘柄:</span>
+      <%= f.select :item, options_for_select([["(すべて)",""]] + @items.map { |v| [v, v] }, selected: params[:item]) %>
+      <%= f.submit "絞り込み", style: "margin-left:12px;" %>
+      <% if params[:from].present? || params[:to].present? || params[:type].present? || params[:item].present? %>
+        <%= link_to "クリア", account_path(@account), style: "margin-left:8px; color: #0288d1; text-decoration: none; padding: 6px 12px; border: 2px solid #b3e5fc; border-radius: 8px; background-color: #ffffff; transition: all 0.3s ease;" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<div style="margin: 0 0 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <span>表示件数:</span>
+    <% if @per_page == 1000 %>
+      <span style="font-weight: 500; color: #0277bd;">1000行</span>
+      <%= link_to "100行に切り替え", account_path(@account, params.permit(:from, :to, :type, :item).merge(per_page: 100, page: 1)), style: "color: #0288d1; text-decoration: none; margin-left: 4px; padding: 6px 12px; border: 2px solid #b3e5fc; border-radius: 8px; background-color: #ffffff; transition: all 0.3s ease;" %>
+    <% else %>
+      <span style="font-weight: 500; color: #0277bd;">100行</span>
+      <%= link_to "1000行に切り替え", account_path(@account, params.permit(:from, :to, :type, :item).merge(per_page: 1000, page: 1)), style: "color: #0288d1; text-decoration: none; margin-left: 4px; padding: 6px 12px; border: 2px solid #b3e5fc; border-radius: 8px; background-color: #ffffff; transition: all 0.3s ease;" %>
+    <% end %>
+  </div>
+  <div style="color: #546e7a; font-size: 0.9em;">
+    全 <%= number_with_delimiter(@total_count) %> 件
+  </div>
+</div>
+
+<table class="trades-table">
+  <thead>
+    <tr>
+      <th>Ticket</th>
+      <th>Open Time</th>
+      <th>Type</th>
+      <th>Size</th>
+      <th>Item</th>
+      <th>Price</th>
+      <th>S / L</th>
+      <th>T / P</th>
+      <th>Close Time</th>
+      <th>Price</th>
+      <th>Commission</th>
+      <th>Taxes</th>
+      <th>Swap</th>
+      <th>Profit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if @trades.any? %>
+      <% @trades.each do |t| %>
+        <tr>
+          <td><%= t.ticket %></td>
+          <td><%= format_mt4_time(t.open_time) %></td>
+          <td><%= t.trade_type %></td>
+          <td><%= t.size %></td>
+          <td><%= t.item %></td>
+          <td><%= t.open_price %></td>
+          <td><%= t.sl %></td>
+          <td><%= t.tp %></td>
+          <td><%= format_mt4_time(t.close_time) %></td>
+          <td><%= t.close_price %></td>
+          <td><%= number_with_delimiter(t.commission) %></td>
+          <td><%= number_with_delimiter(t.taxes) %></td>
+          <td><%= number_with_delimiter(t.swap) %></td>
+          <td class="<%= t.profit.to_f >= 0 ? 'profit-positive' : 'profit-negative' %>"><%= number_with_delimiter(t.profit) %></td>
+        </tr>
+      <% end %>
+    <% else %>
+      <tr>
+        <td colspan="14" style="text-align: center; padding: 20px; color: #90a4ae;">トレードが見つかりませんでした</td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @total_pages > 1 %>
+  <div class="pagination">
+    <% 
+      query_params = params.permit(:from, :to, :type, :item, :per_page)
+      prev_page = @current_page > 1 ? @current_page - 1 : nil
+      next_page = @current_page < @total_pages ? @current_page + 1 : nil
+    %>
+    
+    <% if prev_page %>
+      <%= link_to "« 前へ", account_path(@account, query_params.merge(page: prev_page)), class: "pagination-link" %>
+    <% else %>
+      <span class="pagination-link disabled">« 前へ</span>
+    <% end %>
+
+    <% 
+      start_page = [@current_page - 2, 1].max
+      end_page = [@current_page + 2, @total_pages].min
+    %>
+
+    <% if start_page > 1 %>
+      <%= link_to "1", account_path(@account, query_params.merge(page: 1)), class: "pagination-link" %>
+      <% if start_page > 2 %>
+        <span class="pagination-ellipsis">...</span>
+      <% end %>
+    <% end %>
+
+    <% (start_page..end_page).each do |p| %>
+      <% if p == @current_page %>
+        <span class="pagination-link active"><%= p %></span>
+      <% else %>
+        <%= link_to p.to_s, account_path(@account, query_params.merge(page: p)), class: "pagination-link" %>
+      <% end %>
+    <% end %>
+
+    <% if end_page < @total_pages %>
+      <% if end_page < @total_pages - 1 %>
+        <span class="pagination-ellipsis">...</span>
+      <% end %>
+      <%= link_to @total_pages.to_s, account_path(@account, query_params.merge(page: @total_pages)), class: "pagination-link" %>
+    <% end %>
+
+    <% if next_page %>
+      <%= link_to "次へ »", account_path(@account, query_params.merge(page: next_page)), class: "pagination-link" %>
+    <% else %>
+      <span class="pagination-link disabled">次へ »</span>
+    <% end %>
+  </div>
+<% end %>

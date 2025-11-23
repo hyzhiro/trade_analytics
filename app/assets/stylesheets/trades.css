@@ -1,0 +1,149 @@
+/* トレード一覧テーブルのスタイル - パステルカラーデザイン */
+.trades-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid #b3e5fc;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(129, 212, 250, 0.15);
+  font-size: 0.9em;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.trades-table thead {
+  background: linear-gradient(135deg, #b3e5fc 0%, #81d4fa 100%);
+  border-bottom: 2px solid #4fc3f7;
+}
+
+.trades-table th {
+  padding: 14px 10px;
+  text-align: left;
+  font-weight: 500;
+  color: #0277bd;
+  border-right: 1px solid #81d4fa;
+  border-bottom: 2px solid #4fc3f7;
+  font-size: 0.9em;
+  letter-spacing: 0.3px;
+}
+
+.trades-table th:last-child {
+  border-right: none;
+}
+
+.trades-table tbody tr {
+  border-bottom: 1px solid #e1f5fe;
+  transition: background-color 0.2s ease;
+}
+
+.trades-table tbody tr:hover {
+  background-color: #e1f5fe;
+}
+
+.trades-table tbody tr:nth-child(even) {
+  background-color: #f5fafb;
+}
+
+.trades-table tbody tr:nth-child(even):hover {
+  background-color: #e1f5fe;
+}
+
+.trades-table td {
+  padding: 12px 10px;
+  color: #546e7a;
+  border-right: 1px solid #e1f5fe;
+}
+
+.trades-table td:last-child {
+  border-right: none;
+}
+
+.trades-table .profit-positive {
+  color: #66bb6a;
+  font-weight: 500;
+}
+
+.trades-table .profit-negative {
+  color: #ef9a9a;
+  font-weight: 500;
+}
+
+/* ページネーションスタイル - パステルカラーデザイン */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 32px 0;
+  flex-wrap: wrap;
+}
+
+.pagination-link {
+  display: inline-block;
+  padding: 10px 14px;
+  color: #0277bd;
+  background-color: #ffffff;
+  border: 2px solid #b3e5fc;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  min-width: 40px;
+  text-align: center;
+  font-size: 0.95em;
+  font-weight: 400;
+  box-shadow: 0 2px 4px rgba(129, 212, 250, 0.15);
+}
+
+.pagination-link:hover:not(.disabled):not(.active) {
+  background-color: #e1f5fe;
+  border-color: #81d4fa;
+  color: #01579b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(129, 212, 250, 0.25);
+}
+
+.pagination-link.active {
+  background: linear-gradient(135deg, #81d4fa 0%, #4fc3f7 100%);
+  border-color: #4fc3f7;
+  color: #0277bd;
+  font-weight: 500;
+  box-shadow: 0 4px 8px rgba(129, 212, 250, 0.3);
+}
+
+.pagination-link.disabled {
+  color: #b0bec5;
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.pagination-ellipsis {
+  padding: 10px 4px;
+  color: #81d4fa;
+  font-weight: 400;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .trades-table {
+    font-size: 0.8em;
+  }
+  
+  .trades-table th,
+  .trades-table td {
+    padding: 8px 4px;
+  }
+  
+  .pagination {
+    gap: 4px;
+  }
+  
+  .pagination-link {
+    padding: 6px 8px;
+    font-size: 0.85em;
+    min-width: 32px;
+  }
+}
+

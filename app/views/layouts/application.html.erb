@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TradeAnalytics</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+  </head>
+
+  <body>
+    <nav class="main-nav">
+      <%= link_to "ホーム", root_path, class: "nav-link" %>
+      <span class="nav-separator">|</span>
+      <%= link_to "アカウント一覧", accounts_path, class: "nav-link" %>
+      <span class="nav-separator">|</span>
+      <%= link_to "Statementアップロード", new_statement_path, class: "nav-link" %>
+    </nav>
+
+    <% if notice %><p class="notice-message"><%= notice %></p><% end %>
+    <% if alert %><p class="alert-message"><%= alert %></p><% end %>
+
+    <div class="main-content">
+      <%= yield %>
+    </div>
+  </body>
+</html>

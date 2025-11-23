@@ -1,0 +1,21 @@
+<h1>アカウント一覧</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Account</th>
+      <th>Currency</th>
+      <th>Statements</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% (@accounts || []).each do |a| %>
+      <tr>
+        <td><%= link_to a.name, account_path(a) %></td>
+        <td><%= a.number %></td>
+        <td><%= a.currency %></td>
+        <td><%= a.statements.count %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  </table>

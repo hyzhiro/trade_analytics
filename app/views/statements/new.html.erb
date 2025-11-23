@@ -1,0 +1,13 @@
+<h1>Statementアップロード</h1>
+<div style="max-width: 600px; padding: 24px; background-color: #f5fafb; border-radius: 12px; border: 2px solid #b3e5fc; box-shadow: 0 2px 8px rgba(129, 212, 250, 0.1);">
+  <%= form_with url: statements_path, scope: :statement, multipart: true, local: true do |f| %>
+    <div style="margin-bottom: 20px;">
+      <label>Statement.htm</label>
+      <%= f.file_field :file, accept: ".htm,.html,text/html" %>
+    </div>
+    <div>
+      <%= f.submit "アップロード" %>
+    </div>
+  <% end %>
+</div>
+

@@ -1,0 +1,23 @@
+<h1>Statement一覧</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Account</th>
+      <th>Name</th>
+      <th>Closed P/L</th>
+      <th>Balance</th>
+      <th>アップロード日時</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% (@statements || []).each do |s| %>
+      <tr>
+        <td><%= s.account.number %></td>
+        <td><%= s.account.name %></td>
+        <td><%= number_with_delimiter(s.closed_pl) %></td>
+        <td><%= number_with_delimiter(s.balance) %></td>
+        <td><%= l s.created_at %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  </table>
