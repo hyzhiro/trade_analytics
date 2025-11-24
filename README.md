@@ -1,16 +1,18 @@
 # trade_analytics
 
-A lightweight trade analytics application for importing trade history, evaluating performance, and visualizing trading patterns.
+A lightweight, web-based trade analytics application for importing trade history, evaluating performance, and visualizing trading patterns.
 
 ## Features
 
-- Import trade history (CSV from MT4/MT5 or other brokers)
-- Calculate performance metrics:
+- Import trade history:
+  - HTML reports exported from MT4/MT5
+  - CSV exports from other brokers/platforms
+- Calculate key performance metrics:
   - Win rate
   - Average risk/reward ratio
   - Profit factor
   - Max drawdown
-  - Daily/weekly/monthly P&L
+  - Daily / weekly / monthly P&L
 - Visualize trade results with interactive charts
 - Filter and analyze trades by symbol, direction, session, and more
 - Extensible design for strategy development and future add-ons
@@ -25,32 +27,32 @@ A lightweight trade analytics application for importing trade history, evaluatin
 
 Clone the repository:
 
-````bash
+```bash
 git clone https://github.com/hyzhiro/trade_analytics.git
 cd trade_analytics
-````
+```
 
 Install dependencies:
 
-````bash
+```bash
 npm install
-````
+```
 
 Run the development server:
 
-````bash
+```bash
 npm run dev
-````
+```
 
 Build for production:
 
-````bash
+```bash
 npm run build
-````
+```
 
 ## Project Structure
 
-````text
+```text
 trade_analytics/
   ├── src/
   │   ├── components/
@@ -61,7 +63,19 @@ trade_analytics/
   ├── package.json
   ├── README.md
   └── LICENSE
-````
+```
+
+## Importing MT4/MT5 Trade History
+
+trade_analytics allows you to import trading history exported from MT4/MT5.
+
+1. Open MT4 and go to the **“Account History”** tab.
+2. Right-click inside the history table and save the report as **HTML**.
+3. Open this app and go to the **“Data Upload”** page.
+4. Select the saved HTML file and upload it.
+
+👉 Detailed instructions with screenshots:  
+See **`docs/upload_guide.md`**.
 
 ## Roadmap
 
@@ -73,4 +87,4 @@ trade_analytics/
 ## License
 
 MIT License  
-See the [LICENSE](./LICENSE) file for details.
+See the LICENSE file for details.
