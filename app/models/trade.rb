@@ -40,11 +40,23 @@ class Trade < ApplicationRecord
     
     item_upper = item.upcase.strip
     
-    # XAUUSD（ゴールド）の判定を強化
+    # XAUUSD（ゴールド）の判定
     # 様々な表記に対応（XAUUSD, GOLD, XAU/USDなど）
     if item_upper == "XAUUSD" || item_upper == "GOLD" || 
        item_upper.start_with?("XAU") || item_upper.include?("XAUUSD")
       0.1  # XAUUSD: 0.1ドル = 1Pips
+    # BTCUSD（ビットコイン）の判定
+    # 様々な表記に対応（BTCUSD, BTC/USD, BITCOINなど）
+    elsif item_upper == "BTCUSD" || item_upper == "BTC/USD" || 
+          item_upper.start_with?("BTC") || item_upper.include?("BTCUSD") ||
+          item_upper.include?("BITCOIN")
+      10.0  # BTCUSD: 10ドル = 1Pips
+    # JPN225（日経225）の判定
+    # 様々な表記に対応（JPN225, N225, NIKKEI225など）
+    elsif item_upper == "JPN225" || item_upper == "N225" || 
+          item_upper == "NIKKEI225" || item_upper.include?("JPN225") ||
+          item_upper.include?("N225") || item_upper.include?("NIKKEI")
+      10.0  # JPN225: 10円 = 1Pips
     elsif jpy_pair?
       0.01  # JPYペア: 0.01 = 1Pips
     else
@@ -73,6 +85,24 @@ class Trade < ApplicationRecord
     return false unless item
     item_upper = item.upcase.strip
     item_upper == "XAUUSD" || item_upper == "GOLD" || item_upper.include?("XAU")
+  end
+
+  # BTCUSD（ビットコイン）かどうか
+  def btcusd?
+    return false unless item
+    item_upper = item.upcase.strip
+    item_upper == "BTCUSD" || item_upper == "BTC/USD" || 
+    item_upper.start_with?("BTC") || item_upper.include?("BTCUSD") ||
+    item_upper.include?("BITCOIN")
+  end
+
+  # JPN225（日経225）かどうか
+  def jpn225?
+    return false unless item
+    item_upper = item.upcase.strip
+    item_upper == "JPN225" || item_upper == "N225" || 
+    item_upper == "NIKKEI225" || item_upper.include?("JPN225") ||
+    item_upper.include?("N225") || item_upper.include?("NIKKEI")
   end
 
   # 勝ちトレードかどうか
