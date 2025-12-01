@@ -274,6 +274,55 @@
   </div>
 </div>
 
+<h2>統計情報</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px 0;">
+  <div style="padding: 16px; background-color: #e3f2fd; border-radius: 8px; border: 2px solid #90caf9;">
+    <div style="font-size: 0.9em; color: #0277bd; margin-bottom: 8px;">平均獲得Pips数</div>
+    <div style="font-size: 1.5em; font-weight: bold; color: #01579b;">
+      <%= @average_winning_pips %> pips
+    </div>
+  </div>
+  
+  <div style="padding: 16px; background-color: #ffebee; border-radius: 8px; border: 2px solid #ef9a9a;">
+    <div style="font-size: 0.9em; color: #c62828; margin-bottom: 8px;">平均損失Pips数</div>
+    <div style="font-size: 1.5em; font-weight: bold; color: #b71c1c;">
+      <%= @average_losing_pips %> pips
+    </div>
+  </div>
+  
+  <div style="padding: 16px; background-color: #f3e5f5; border-radius: 8px; border: 2px solid #ce93d8;">
+    <div style="font-size: 0.9em; color: #7b1fa2; margin-bottom: 8px;">総トレード回数</div>
+    <div style="font-size: 1.5em; font-weight: bold; color: #4a148c;">
+      <%= number_with_delimiter(@total_trades_count) %> 件
+    </div>
+  </div>
+  
+  <div style="padding: 16px; background-color: #e8f5e9; border-radius: 8px; border: 2px solid #a5d6a7;">
+    <div style="font-size: 0.9em; color: #2e7d32; margin-bottom: 8px;">勝ちトレード数</div>
+    <div style="font-size: 1.5em; font-weight: bold; color: #1b5e20;">
+      <%= number_with_delimiter(@winning_trades_count) %> 件
+    </div>
+  </div>
+  
+  <div style="padding: 16px; background-color: #fff3e0; border-radius: 8px; border: 2px solid #ffcc80;">
+    <div style="font-size: 0.9em; color: #e65100; margin-bottom: 8px;">負けトレード数</div>
+    <div style="font-size: 1.5em; font-weight: bold; color: #bf360c;">
+      <%= number_with_delimiter(@losing_trades_count) %> 件
+    </div>
+  </div>
+  
+  <div style="padding: 16px; background-color: #e0f2f1; border-radius: 8px; border: 2px solid #80cbc4;">
+    <div style="font-size: 0.9em; color: #00695c; margin-bottom: 8px;">リスクリワード比率</div>
+    <div style="font-size: 1.5em; font-weight: bold; color: #004d40;">
+      <% if @risk_reward_ratio == Float::INFINITY %>
+        ∞
+      <% else %>
+        <%= @risk_reward_ratio %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
 <h2>トレード一覧</h2>
 <div class="filter-form" style="margin: 0 0 20px; padding: 16px; background-color: #f5fafb; border-radius: 12px; border: 2px solid #b3e5fc;">
   <%= form_with url: account_path(@account), method: :get, local: true do |f| %>

@@ -15,6 +15,76 @@ class Trade < ApplicationRecord
     convert_mt4_to_jst(close_time)
   end
 
+  # Pipsを計算
+  def pips
+    return nil unless open_price && close_price && item
+    return nil if open_price.to_f == 0 || close_price.to_f == 0
+
+    # 通貨ペアに応じてpip_valueを決定
+    pip_value = pip_value_for_item
+
+    # 価格差を計算
+    price_diff = close_price.to_f - open_price.to_f
+
+    # Buy/Sellに応じて符号を調整
+    # Buy: 価格上昇で利益（正）、価格下降で損失（負）
+    # Sell: 価格下降で利益（正）、価格上昇で損失（負）
+    multiplier = buy? ? 1 : -1
+
+    (price_diff / pip_value * multiplier).round(1)
+  end
+
+  # 通貨ペアに応じたpip_valueを取得
+  def pip_value_for_item
+    return 0.0001 unless item
+    
+    item_upper = item.upcase.strip
+    
+    # XAUUSD（ゴールド）の判定を強化
+    # 様々な表記に対応（XAUUSD, GOLD, XAU/USDなど）
+    if item_upper == "XAUUSD" || item_upper == "GOLD" || 
+       item_upper.start_with?("XAU") || item_upper.include?("XAUUSD")
+      0.1  # XAUUSD: 0.1ドル = 1Pips
+    elsif jpy_pair?
+      0.01  # JPYペア: 0.01 = 1Pips
+    else
+      0.0001  # その他の通貨ペア: 0.0001 = 1Pips
+    end
+  end
+
+  # Buyトレードかどうか
+  def buy?
+    trade_type&.upcase == "BUY"
+  end
+
+  # Sellトレードかどうか
+  def sell?
+    trade_type&.upcase == "SELL"
+  end
+
+  # JPYペアかどうか
+  def jpy_pair?
+    return false unless item
+    item.upcase.include?("JPY")
+  end
+
+  # XAUUSD（ゴールド）かどうか
+  def xauusd?
+    return false unless item
+    item_upper = item.upcase.strip
+    item_upper == "XAUUSD" || item_upper == "GOLD" || item_upper.include?("XAU")
+  end
+
+  # 勝ちトレードかどうか
+  def win?
+    profit.to_f > 0
+  end
+
+  # 負けトレードかどうか
+  def loss?
+    profit.to_f < 0
+  end
+
   private
 
   # MT4時間を日本時間に変換
