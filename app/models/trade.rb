@@ -41,9 +41,10 @@ class Trade < ApplicationRecord
     item_upper = item.upcase.strip
     
     # XAUUSD（ゴールド）の判定
-    # 様々な表記に対応（XAUUSD, GOLD, XAU/USDなど）
+    # 様々な表記に対応（XAUUSD, GOLD, GOLDMICRO, XAU/USDなど）
     if item_upper == "XAUUSD" || item_upper == "GOLD" || 
-       item_upper.start_with?("XAU") || item_upper.include?("XAUUSD")
+       item_upper.start_with?("XAU") || item_upper.include?("XAUUSD") ||
+       item_upper.include?("GOLD")
       0.1  # XAUUSD: 0.1ドル = 1Pips
     # BTCUSD（ビットコイン）の判定
     # 様々な表記に対応（BTCUSD, BTC/USD, BITCOINなど）
@@ -84,7 +85,8 @@ class Trade < ApplicationRecord
   def xauusd?
     return false unless item
     item_upper = item.upcase.strip
-    item_upper == "XAUUSD" || item_upper == "GOLD" || item_upper.include?("XAU")
+    item_upper == "XAUUSD" || item_upper == "GOLD" || 
+    item_upper.include?("XAU") || item_upper.include?("GOLD")
   end
 
   # BTCUSD（ビットコイン）かどうか
