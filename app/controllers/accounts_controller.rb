@@ -69,6 +69,41 @@ class AccountsController < ApplicationController
     end
     @equity_points = points
 
+    # 日別サマリー（カレンダー用）：収益・獲得Pips・損失Pips・ネットPips
+    daily_stats = {}
+    calendar_min = nil
+    calendar_max = nil
+    all_trades_for_graph.where.not(close_time: nil).find_each do |t|
+      jst = t.close_time_jst
+      next unless jst
+      d = jst.to_date
+      daily_stats[d] ||= { profit: 0, winning_pips: 0.0, losing_pips: 0.0 }
+      daily_stats[d][:profit] += t.profit.to_i
+      p = t.pips
+      if p.present? && p.abs <= 100_000
+        if p > 0
+          daily_stats[d][:winning_pips] += p
+        else
+          daily_stats[d][:losing_pips] += p.abs
+        end
+      end
+      calendar_min = d if calendar_min.nil? || d < calendar_min
+      calendar_max = d if calendar_max.nil? || d > calendar_max
+    end
+    @daily_stats = daily_stats
+    if filter_params[:from].present?
+      from_date = Date.parse(filter_params[:from]) rescue nil
+      calendar_min = from_date if from_date && (calendar_min.nil? || from_date < calendar_min)
+    end
+    if filter_params[:to].present?
+      to_date = Date.parse(filter_params[:to]) rescue nil
+      calendar_max = to_date if to_date && (calendar_max.nil? || to_date > calendar_max)
+    end
+    @calendar_start = calendar_min
+    @calendar_end = calendar_max
+    # 同日月のみの場合は @calendar_end が nil になり得ないが、念のため
+    @calendar_end = @calendar_start if @calendar_end.nil? && @calendar_start
+
     # Type別の割合（円グラフ用）
     type_counts = all_trades_for_graph.where.not(trade_type: [nil, ""])
                                      .group(:trade_type)
@@ -143,12 +178,12 @@ class AccountsController < ApplicationController
     
     # 平均獲得Pips数（勝ちトレードのみ）
     winning_pips = winning_trades.map { |t| t.pips }.compact.reject { |p| p.nil? || p.abs > 100000 }
-    @average_winning_pips = winning_pips.any? ? (winning_pips.sum.to_f / winning_pips.size).round(1) : 0
+    @average_winning_pips = winning_pips.any? ? (winning_pips.sum.to_f / winning_pips.size).round : 0
     
     # 平均損失Pips数（負けトレードのみ、絶対値）
     # 負けトレードのPipsは負の値になるはずなので、絶対値を取る
     losing_pips = losing_trades.map { |t| t.pips }.compact.reject { |p| p.nil? || p.abs > 100000 }.map(&:abs)
-    @average_losing_pips = losing_pips.any? ? (losing_pips.sum.to_f / losing_pips.size).round(1) : 0
+    @average_losing_pips = losing_pips.any? ? (losing_pips.sum.to_f / losing_pips.size).round : 0
     
     # 総トレード回数
     @total_trades_count = total_trades
@@ -161,7 +196,7 @@ class AccountsController < ApplicationController
     
     # リスクリワード比率
     if @average_losing_pips > 0
-      @risk_reward_ratio = (@average_winning_pips / @average_losing_pips).round(2)
+      @risk_reward_ratio = (@average_winning_pips / @average_losing_pips).round(1)
     else
       @risk_reward_ratio = @average_winning_pips > 0 ? Float::INFINITY : 0
     end
