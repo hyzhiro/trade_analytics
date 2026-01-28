@@ -31,7 +31,7 @@ class Trade < ApplicationRecord
     # Sell: 価格下降で利益（正）、価格上昇で損失（負）
     multiplier = buy? ? 1 : -1
 
-    (price_diff / pip_value * multiplier).round(1)
+    (price_diff / pip_value * multiplier).round
   end
 
   # 通貨ペアに応じたpip_valueを取得

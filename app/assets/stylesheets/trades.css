@@ -125,6 +125,29 @@
   font-weight: 400;
 }
 
+/* 日別カレンダー */
+.daily-calendar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.daily-calendar-wrap > p {
+  text-align: center;
+}
+.calendar-month {
+  width: 100%;
+  max-width: 900px;
+}
+.calendar-month-title {
+  text-align: center;
+}
+.calendar-day-cell {
+  min-width: 0;
+}
+@media (min-width: 640px) {
+  .calendar-day-cell { min-width: 100px; }
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
   .trades-table {
