@@ -104,6 +104,27 @@ class AccountsController < ApplicationController
     # 同日月のみの場合は @calendar_end が nil になり得ないが、念のため
     @calendar_end = @calendar_start if @calendar_end.nil? && @calendar_start
 
+    # 月別サマリー（カレンダー下の表・グラフ用）：収支・獲得Pips・損失Pips・ネットPips
+    monthly = {}
+    daily_stats.each do |d, s|
+      key = [d.year, d.month]
+      monthly[key] ||= { profit: 0, winning_pips: 0.0, losing_pips: 0.0 }
+      monthly[key][:profit] += s[:profit]
+      monthly[key][:winning_pips] += s[:winning_pips]
+      monthly[key][:losing_pips] += s[:losing_pips]
+    end
+    @monthly_stats = monthly.sort_by { |(y, m), _| [y, m] }.map do |(year, month), s|
+      {
+        year: year,
+        month: month,
+        label: "#{year}年#{month}月",
+        profit: s[:profit],
+        winning_pips: s[:winning_pips].round(1),
+        losing_pips: s[:losing_pips].round(1),
+        net_pips: (s[:winning_pips] - s[:losing_pips]).round(1)
+      }
+    end
+
     # Type別の割合（円グラフ用）
     type_counts = all_trades_for_graph.where.not(trade_type: [nil, ""])
                                      .group(:trade_type)
