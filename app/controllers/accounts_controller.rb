@@ -104,6 +104,27 @@ class AccountsController < ApplicationController
     # 同日月のみの場合は @calendar_end が nil になり得ないが、念のため
     @calendar_end = @calendar_start if @calendar_end.nil? && @calendar_start
 
+    # 月別サマリー（カレンダー下の表・グラフ用）：収支・獲得Pips・損失Pips・ネットPips
+    monthly = {}
+    daily_stats.each do |d, s|
+      key = [d.year, d.month]
+      monthly[key] ||= { profit: 0, winning_pips: 0.0, losing_pips: 0.0 }
+      monthly[key][:profit] += s[:profit]
+      monthly[key][:winning_pips] += s[:winning_pips]
+      monthly[key][:losing_pips] += s[:losing_pips]
+    end
+    @monthly_stats = monthly.sort_by { |(y, m), _| [y, m] }.map do |(year, month), s|
+      {
+        year: year,
+        month: month,
+        label: "#{year}年#{month}月",
+        profit: s[:profit],
+        winning_pips: s[:winning_pips].round(1),
+        losing_pips: s[:losing_pips].round(1),
+        net_pips: (s[:winning_pips] - s[:losing_pips]).round(1)
+      }
+    end
+
     # Type別の割合（円グラフ用）
     type_counts = all_trades_for_graph.where.not(trade_type: [nil, ""])
                                      .group(:trade_type)
@@ -175,25 +196,25 @@ class AccountsController < ApplicationController
     total_trades = all_trades_for_stats.count
     winning_trades = all_trades_for_stats.select { |t| t.win? }
     losing_trades = all_trades_for_stats.select { |t| t.loss? }
-    
+
     # 平均獲得Pips数（勝ちトレードのみ）
     winning_pips = winning_trades.map { |t| t.pips }.compact.reject { |p| p.nil? || p.abs > 100000 }
     @average_winning_pips = winning_pips.any? ? (winning_pips.sum.to_f / winning_pips.size).round : 0
-    
+
     # 平均損失Pips数（負けトレードのみ、絶対値）
     # 負けトレードのPipsは負の値になるはずなので、絶対値を取る
     losing_pips = losing_trades.map { |t| t.pips }.compact.reject { |p| p.nil? || p.abs > 100000 }.map(&:abs)
     @average_losing_pips = losing_pips.any? ? (losing_pips.sum.to_f / losing_pips.size).round : 0
-    
+
     # 総トレード回数
     @total_trades_count = total_trades
-    
+
     # 勝ちトレード数
     @winning_trades_count = winning_trades.size
-    
+
     # 負けトレード数
     @losing_trades_count = losing_trades.size
-    
+
     # リスクリワード比率
     if @average_losing_pips > 0
       @risk_reward_ratio = (@average_winning_pips / @average_losing_pips).round(1)
