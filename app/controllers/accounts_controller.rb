@@ -9,7 +9,7 @@ class AccountsController < ApplicationController
     @items = @account.trades.where.not(item: [nil, ""]).distinct.order(:item).pluck(:item)
 
     # Strong Parametersで許可されたパラメータを取得
-    filter_params = params.permit(:from, :to, :type, :item, :per_page, :page, :commit)
+    filter_params = params.permit(:from, :to, :type, :item, :per_page, :page, :calendar_month, :commit)
 
     @trades = @account.trades
     if filter_params[:from].present?
@@ -64,12 +64,12 @@ class AccountsController < ApplicationController
     points = [[0, 0]] # 開始点(取引0件でP/L=0)
     sorted_for_graph.each do |t|
       idx += 1
-      cum += t.profit.to_i
+      cum += t.profit.to_i + t.commission.to_i + t.swap.to_i
       points << [idx, cum]
     end
     @equity_points = points
 
-    # 日別サマリー（カレンダー用）：収益・獲得Pips・損失Pips・ネットPips
+    # 日別サマリー（カレンダー用）：損益・手数料・スワップ・獲得Pips・損失Pips・ネットPips
     daily_stats = {}
     calendar_min = nil
     calendar_max = nil
@@ -77,8 +77,10 @@ class AccountsController < ApplicationController
       jst = t.close_time_jst
       next unless jst
       d = jst.to_date
-      daily_stats[d] ||= { profit: 0, winning_pips: 0.0, losing_pips: 0.0 }
+      daily_stats[d] ||= { profit: 0, commission: 0, swap: 0, winning_pips: 0.0, losing_pips: 0.0 }
       daily_stats[d][:profit] += t.profit.to_i
+      daily_stats[d][:commission] += t.commission.to_i
+      daily_stats[d][:swap] += t.swap.to_i
       p = t.pips
       if p.present? && p.abs <= 100_000
         if p > 0
@@ -104,21 +106,60 @@ class AccountsController < ApplicationController
     # 同日月のみの場合は @calendar_end が nil になり得ないが、念のため
     @calendar_end = @calendar_start if @calendar_end.nil? && @calendar_start
 
-    # 月別サマリー（カレンダー下の表・グラフ用）：収支・獲得Pips・損失Pips・ネットPips
+    # 日別カレンダー表示月（1か月分・ページング用）
+    if @calendar_start && @calendar_end
+      if filter_params[:calendar_month].present?
+        begin
+          parts = filter_params[:calendar_month].split("-")
+          if parts.size == 2
+            y, m = parts[0].to_i, parts[1].to_i
+            if (1..12).cover?(m) && y > 0
+              candidate = Date.new(y, m, 1)
+              # データ範囲内の月のみ有効
+              range_start = Date.new(@calendar_start.year, @calendar_start.month, 1)
+              range_end = Date.new(@calendar_end.year, @calendar_end.month, 1)
+              if candidate >= range_start && candidate <= range_end
+                @calendar_display_year = y
+                @calendar_display_month = m
+              end
+            end
+          end
+        rescue ArgumentError, TypeError
+          nil
+        end
+      end
+      unless @calendar_display_year && @calendar_display_month
+        @calendar_display_year = @calendar_end.year
+        @calendar_display_month = @calendar_end.month
+      end
+      display_first = Date.new(@calendar_display_year, @calendar_display_month, 1)
+      range_start = Date.new(@calendar_start.year, @calendar_start.month, 1)
+      range_end = Date.new(@calendar_end.year, @calendar_end.month, 1)
+      @calendar_prev_month = (display_first > range_start) ? display_first.prev_month : nil
+      @calendar_next_month = (display_first < range_end) ? display_first.next_month : nil
+    end
+
+    # 月別サマリー（カレンダー下の表・グラフ用）：損益・手数料・スワップ・収支・獲得Pips・損失Pips・ネットPips
     monthly = {}
     daily_stats.each do |d, s|
       key = [d.year, d.month]
-      monthly[key] ||= { profit: 0, winning_pips: 0.0, losing_pips: 0.0 }
+      monthly[key] ||= { profit: 0, commission: 0, swap: 0, winning_pips: 0.0, losing_pips: 0.0 }
       monthly[key][:profit] += s[:profit]
+      monthly[key][:commission] += s[:commission]
+      monthly[key][:swap] += s[:swap]
       monthly[key][:winning_pips] += s[:winning_pips]
       monthly[key][:losing_pips] += s[:losing_pips]
     end
     @monthly_stats = monthly.sort_by { |(y, m), _| [y, m] }.map do |(year, month), s|
+      balance = s[:profit] + s[:commission] + s[:swap]
       {
         year: year,
         month: month,
         label: "#{year}年#{month}月",
         profit: s[:profit],
+        commission: s[:commission],
+        swap: s[:swap],
+        balance: balance,
         winning_pips: s[:winning_pips].round(1),
         losing_pips: s[:losing_pips].round(1),
         net_pips: (s[:winning_pips] - s[:losing_pips]).round(1)

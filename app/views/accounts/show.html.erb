@@ -1,7 +1,7 @@
 <h1><%= @account.name %>（<%= @account.number %>）</h1>
 <p>通貨: <%= @account.currency %></p>
 
-<h2>損益グラフ</h2>
+<h2>収支グラフ</h2>
 <div style="margin: 0 0 12px;">
   <canvas id="equityChart" height="120"></canvas>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -32,7 +32,7 @@
               ticks: { precision: 0 }
             },
             y: {
-              title: { display: true, text: 'P/L' }
+              title: { display: true, text: '収支' }
             }
           },
           plugins: {
@@ -46,65 +46,82 @@
 
 <h2>日別サマリー（カレンダー）</h2>
 <div class="daily-calendar-wrap" style="margin: 20px 0;">
-  <% if @calendar_start && @calendar_end %>
-    <% (@calendar_start..@calendar_end).map { |d| [d.year, d.month] }.uniq.each do |year, month| %>
-      <div class="calendar-month" style="margin-bottom: 24px;">
-        <div class="calendar-month-title" style="font-size: 1.1em; font-weight: 600; color: #0277bd; margin-bottom: 8px;"><%= year %>年<%= month %>月</div>
-        <table class="calendar-grid" style="width: 100%; max-width: 900px; border-collapse: collapse; border: 1px solid #b3e5fc; border-radius: 8px; overflow: hidden; background: #fff;">
-          <thead>
-            <tr style="background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);">
-              <% %w[日 月 火 水 木 金 土].each do |w| %>
-                <th style="padding: 8px 4px; text-align: center; font-size: 0.85em; color: #0277bd; border: 1px solid #81d4fa;"><%= w %></th>
+  <% if @calendar_start && @calendar_end && @calendar_display_year && @calendar_display_month %>
+    <%
+      cal_query = params.permit(:from, :to, :type, :item, :per_page, :page)
+    %>
+    <div class="calendar-month-nav" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; max-width: 900px;">
+      <% if @calendar_prev_month %>
+        <%= link_to "« #{@calendar_prev_month.year}年#{@calendar_prev_month.month}月", account_path(@account, cal_query.merge(calendar_month: "#{@calendar_prev_month.year}-#{'%02d' % @calendar_prev_month.month}")), style: "padding: 8px 16px; color: #0277bd; text-decoration: none; border: 2px solid #b3e5fc; border-radius: 8px; background: #fff; transition: all 0.3s ease;" %>
+      <% else %>
+        <span style="padding: 8px 16px; color: #b0bec5; border: 2px solid #e0e0e0; border-radius: 8px; background: #f5f5f5;">« 前月</span>
+      <% end %>
+      <div class="calendar-month-title" style="font-size: 1.2em; font-weight: 600; color: #0277bd;"><%= @calendar_display_year %>年<%= @calendar_display_month %>月</div>
+      <% if @calendar_next_month %>
+        <%= link_to "#{@calendar_next_month.year}年#{@calendar_next_month.month}月 »", account_path(@account, cal_query.merge(calendar_month: "#{@calendar_next_month.year}-#{'%02d' % @calendar_next_month.month}")), style: "padding: 8px 16px; color: #0277bd; text-decoration: none; border: 2px solid #b3e5fc; border-radius: 8px; background: #fff; transition: all 0.3s ease;" %>
+      <% else %>
+        <span style="padding: 8px 16px; color: #b0bec5; border: 2px solid #e0e0e0; border-radius: 8px; background: #f5f5f5;">次月 »</span>
+      <% end %>
+    </div>
+    <div class="calendar-month" style="margin-bottom: 24px;">
+      <table class="calendar-grid" style="width: 100%; max-width: 900px; border-collapse: collapse; border: 1px solid #b3e5fc; border-radius: 8px; overflow: hidden; background: #fff;">
+        <thead>
+          <tr style="background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);">
+            <% %w[日 月 火 水 木 金 土].each do |w| %>
+              <th style="padding: 8px 4px; text-align: center; font-size: 0.85em; color: #0277bd; border: 1px solid #81d4fa;"><%= w %></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% calendar_weeks_for_month(@calendar_display_year, @calendar_display_month).each do |week| %>
+            <tr>
+              <% week.each do |d| %>
+                <td class="calendar-day-cell" style="padding: 6px 4px; border: 1px solid #e1f5fe; vertical-align: top; min-height: 72px;">
+                  <% if d %>
+                    <% s = @daily_stats[d] %>
+                    <div style="font-size: 0.8em; font-weight: 600; color: #546e7a; margin-bottom: 4px;"><%= d.day %></div>
+                    <% if s %>
+                      <% day_balance = s[:profit] + s[:commission] + s[:swap] %>
+                      <div style="font-size: 0.7em; line-height: 1.35;">
+                        <div class="<%= day_balance >= 0 ? 'profit-positive' : 'profit-negative' %>" style="font-weight: 600;"><%= number_with_delimiter(day_balance) %> <small><%= @account.currency %></small></div>
+                        <div style="color: #2e7d32;">獲得 <%= s[:winning_pips].round %> p</div>
+                        <div style="color: #c62828;">損失 <%= s[:losing_pips].round %> p</div>
+                        <% net = s[:winning_pips] - s[:losing_pips] %>
+                        <div style="color: #1565c0; font-weight: 500;">ネット <%= net.round %> p</div>
+                      </div>
+                    <% else %>
+                      <div style="color: #b0bec5; font-size: 0.75em;">—</div>
+                    <% end %>
+                  <% else %>
+                    <span style="color: #eceff1;">—</span>
+                  <% end %>
+                </td>
               <% end %>
             </tr>
-          </thead>
-          <tbody>
-            <% calendar_weeks_for_month(year, month).each do |week| %>
-              <tr>
-                <% week.each do |d| %>
-                  <td class="calendar-day-cell" style="padding: 6px 4px; border: 1px solid #e1f5fe; vertical-align: top; min-height: 72px;">
-                    <% if d %>
-                      <% s = @daily_stats[d] %>
-                      <div style="font-size: 0.8em; font-weight: 600; color: #546e7a; margin-bottom: 4px;"><%= d.day %></div>
-                      <% if s %>
-                        <div style="font-size: 0.7em; line-height: 1.35;">
-                          <div class="<%= s[:profit] >= 0 ? 'profit-positive' : 'profit-negative' %>" style="font-weight: 600;"><%= number_with_delimiter(s[:profit]) %> <small><%= @account.currency %></small></div>
-                          <div style="color: #2e7d32;">獲得 <%= s[:winning_pips].round %> p</div>
-                          <div style="color: #c62828;">損失 <%= s[:losing_pips].round %> p</div>
-                          <% net = s[:winning_pips] - s[:losing_pips] %>
-                          <div style="color: #1565c0; font-weight: 500;">ネット <%= net.round %> p</div>
-                        </div>
-                      <% else %>
-                        <div style="color: #b0bec5; font-size: 0.75em;">—</div>
-                      <% end %>
-                    <% else %>
-                      <span style="color: #eceff1;">—</span>
-                    <% end %>
-                  </td>
-                <% end %>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    <% end %>
-  <% else %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% elsif @calendar_start.nil? && @calendar_end.nil? %>
     <p style="color: #90a4ae;">取引データがありません。</p>
   <% end %>
 </div>
 
 <% if @monthly_stats.present? %>
-  <h2>月別サマリー（収支・獲得・損失・ネットPips）</h2>
+  <h2>月別サマリー（損益・手数料・スワップ・収支・獲得・損失・ネットPips）</h2>
   <div class="daily-calendar-wrap" style="margin: 20px 0;">
     <div style="overflow-x: auto; margin-bottom: 24px;">
-      <table class="calendar-grid" style="width: 100%; max-width: 700px; border-collapse: collapse; border: 1px solid #b3e5fc; border-radius: 8px; overflow: hidden; background: #fff;">
+      <table class="calendar-grid" style="width: 100%; max-width: 100%; border-collapse: collapse; border: 1px solid #b3e5fc; border-radius: 8px; overflow: hidden; background: #fff;">
         <thead>
           <tr style="background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);">
-            <th style="padding: 10px 12px; text-align: left; font-size: 0.9em; color: #0277bd; border: 1px solid #81d4fa;">月</th>
-            <th style="padding: 10px 12px; text-align: right; font-size: 0.9em; color: #0277bd; border: 1px solid #81d4fa;">収支</th>
-            <th style="padding: 10px 12px; text-align: right; font-size: 0.9em; color: #2e7d32; border: 1px solid #81d4fa;">獲得Pips</th>
-            <th style="padding: 10px 12px; text-align: right; font-size: 0.9em; color: #c62828; border: 1px solid #81d4fa;">損失Pips</th>
-            <th style="padding: 10px 12px; text-align: right; font-size: 0.9em; color: #1565c0; border: 1px solid #81d4fa;">ネットPips</th>
+            <th style="padding: 10px 12px; text-align: center; font-size: 0.9em; color: #0277bd; border: 1px solid #81d4fa;">月</th>
+            <th style="padding: 10px 12px; text-align: center; font-size: 0.9em; color: #0277bd; border: 1px solid #81d4fa;">損益</th>
+            <th style="padding: 10px 12px; text-align: center; font-size: 0.9em; color: #0277bd; border: 1px solid #81d4fa;">手数料</th>
+            <th style="padding: 10px 12px; text-align: center; font-size: 0.9em; color: #0277bd; border: 1px solid #81d4fa;">スワップ</th>
+            <th style="padding: 10px 12px; text-align: center; font-size: 0.9em; color: #0277bd; border: 1px solid #81d4fa;">収支</th>
+            <th style="padding: 10px 12px; text-align: center; font-size: 0.9em; color: #2e7d32; border: 1px solid #81d4fa;">獲得Pips</th>
+            <th style="padding: 10px 12px; text-align: center; font-size: 0.9em; color: #c62828; border: 1px solid #81d4fa;">損失Pips</th>
+            <th style="padding: 10px 12px; text-align: center; font-size: 0.9em; color: #1565c0; border: 1px solid #81d4fa;">ネットPips</th>
           </tr>
         </thead>
         <tbody>
@@ -112,6 +129,9 @@
             <tr style="background: #fff;">
               <td style="padding: 8px 12px; border: 1px solid #e1f5fe; font-weight: 500;"><%= m[:label] %></td>
               <td style="padding: 8px 12px; border: 1px solid #e1f5fe; text-align: right;" class="<%= m[:profit] >= 0 ? 'profit-positive' : 'profit-negative' %>"><%= number_with_delimiter(m[:profit]) %> <%= @account.currency %></td>
+              <td style="padding: 8px 12px; border: 1px solid #e1f5fe; text-align: right;"><%= number_with_delimiter(m[:commission]) %> <%= @account.currency %></td>
+              <td style="padding: 8px 12px; border: 1px solid #e1f5fe; text-align: right;" class="<%= m[:swap] >= 0 ? 'profit-positive' : 'profit-negative' %>"><%= number_with_delimiter(m[:swap]) %> <%= @account.currency %></td>
+              <td style="padding: 8px 12px; border: 1px solid #e1f5fe; text-align: right;" class="<%= m[:balance] >= 0 ? 'profit-positive' : 'profit-negative' %>"><%= number_with_delimiter(m[:balance]) %> <%= @account.currency %></td>
               <td style="padding: 8px 12px; border: 1px solid #e1f5fe; text-align: right; color: #2e7d32;"><%= number_with_delimiter(m[:winning_pips]) %> p</td>
               <td style="padding: 8px 12px; border: 1px solid #e1f5fe; text-align: right; color: #c62828;"><%= number_with_delimiter(m[:losing_pips]) %> p</td>
               <td style="padding: 8px 12px; border: 1px solid #e1f5fe; text-align: right; color: #1565c0; font-weight: 500;"><%= number_with_delimiter(m[:net_pips]) %> p</td>
@@ -407,6 +427,7 @@
   <%= form_with url: account_path(@account), method: :get, local: true do |f| %>
     <%= hidden_field_tag :per_page, params[:per_page] if params[:per_page].present? %>
     <%= hidden_field_tag :page, params[:page] if params[:page].present? %>
+    <%= hidden_field_tag :calendar_month, params[:calendar_month] if params[:calendar_month].present? %>
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
       <span style="color: #0277bd; font-weight: 500;">期間:</span>
       <%= f.date_field :from, value: params[:from], placeholder: "From", style: "margin-right: 4px;" %>
@@ -490,7 +511,7 @@
 <% if @total_pages > 1 %>
   <div class="pagination">
     <% 
-      query_params = params.permit(:from, :to, :type, :item, :per_page)
+      query_params = params.permit(:from, :to, :type, :item, :per_page, :calendar_month)
       prev_page = @current_page > 1 ? @current_page - 1 : nil
       next_page = @current_page < @total_pages ? @current_page + 1 : nil
     %>
