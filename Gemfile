@@ -46,4 +46,4 @@ group :development do
   gem "web-console"
 end
 
-gem "nokogiri", "~> 1.18"
+gem "nokogiri", "~> 1.19"
