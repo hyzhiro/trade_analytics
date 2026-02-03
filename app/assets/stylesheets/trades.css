@@ -138,6 +138,12 @@
   width: 100%;
   max-width: 900px;
 }
+.calendar-two-months {
+  align-items: center;
+}
+.calendar-two-months .calendar-month {
+  max-width: 900px;
+}
 .calendar-month-title {
   text-align: center;
 }

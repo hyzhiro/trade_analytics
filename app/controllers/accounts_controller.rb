@@ -106,7 +106,7 @@ class AccountsController < ApplicationController
     # 同日月のみの場合は @calendar_end が nil になり得ないが、念のため
     @calendar_end = @calendar_start if @calendar_end.nil? && @calendar_start
 
-    # 日別カレンダー表示月（1か月分・ページング用）
+    # 日別カレンダー表示月（2か月分同時表示・ページング用）
     if @calendar_start && @calendar_end
       if filter_params[:calendar_month].present?
         begin
@@ -129,14 +129,23 @@ class AccountsController < ApplicationController
         end
       end
       unless @calendar_display_year && @calendar_display_month
-        @calendar_display_year = @calendar_end.year
-        @calendar_display_month = @calendar_end.month
+        # 初期表示: 現在の月と前月（前月が上、今月が下）
+        default_first = Date.current.prev_month
+        @calendar_display_year = default_first.year
+        @calendar_display_month = default_first.month
       end
       display_first = Date.new(@calendar_display_year, @calendar_display_month, 1)
       range_start = Date.new(@calendar_start.year, @calendar_start.month, 1)
       range_end = Date.new(@calendar_end.year, @calendar_end.month, 1)
+      # 2か月分: 表示開始月とその翌月（上＝先の月、下＝後の月）
+      display_second = display_first.next_month
+      @calendar_display_months = [
+        [display_first.year, display_first.month],
+        [display_second.year, display_second.month]
+      ]
+      # ナビは1か月ずつ: 前月＝表示の1か月前、次月＝表示の1か月後
       @calendar_prev_month = (display_first > range_start) ? display_first.prev_month : nil
-      @calendar_next_month = (display_first < range_end) ? display_first.next_month : nil
+      @calendar_next_month = (display_second <= range_end) ? display_second : nil
     end
 
     # 月別サマリー（カレンダー下の表・グラフ用）：損益・手数料・スワップ・収支・獲得Pips・損失Pips・ネットPips
